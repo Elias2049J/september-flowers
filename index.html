@@ -625,6 +625,12 @@
       </div>
     </div>
   </div>
+
+  <form id="noteForm" action="https://formspree.io/f/xeaogzze" method="POST" hidden>
+    <input type="hidden" name="_subject" value="Nueva nota - Un campo de flores amarillas">
+    <input type="hidden" name="nota" id="noteFormNote">
+    <input type="hidden" name="momento" id="noteFormMomento">
+  </form>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -1170,8 +1176,15 @@
     });
   }
 
+  function sendNote(momento){
+    document.getElementById("noteFormNote").value = noteInput.value;
+    document.getElementById("noteFormMomento").value = momento;
+    document.getElementById("noteForm").submit();
+  }
+
   noteReadBtn.addEventListener("click", function(e){
     e.stopPropagation();
+    sendNote("leer ahora");
     state.readNote = "leer";
     noteArea.style.display = "none";
     dialogueText.style.display = "";
@@ -1179,6 +1192,7 @@
   });
   noteKeepBtn.addEventListener("click", function(e){
     e.stopPropagation();
+    sendNote("guardar para luego");
     state.readNote = "guardar";
     noteArea.style.display = "none";
     dialogueText.style.display = "";
