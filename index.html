@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Un campo de flores amarillas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#3B2547;
+    --sky-mid:#B85B3C;
+    --sky-low:#F3B23F;
+    --sun-glow:#FFE7A0;
+    --hill-far:#6E4A57;
+    --hill-near:#472C39;
+    --field-base:#8A6A22;
+    --field-dark:#4E3A0F;
+    --petal:#F5C518;
+    --petal-deep:#E4A417;
+    --petal-soft:#FBD257;
+    --petal-center:#6B3F14;
+    --leaf:#6E7B3A;
+    --panel-bg:rgba(38,20,18,0.82);
+    --panel-border:rgba(245,197,24,0.30);
+    --text-cream:#FBF3DD;
+    --text-muted:#E3C9A0;
+    --accent:#B0466F;
+    --accent-soft:#D98CA6;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%;
+    margin:0;
+    background:#2a1a20;
+    font-family:'Manrope',sans-serif;
+    overflow:hidden;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #app{position:relative; width:100%; height:100%; min-height:100%;}
+  #stageWrap{position:absolute; inset:0; will-change:transform;}
+  #stageSvg{width:100%; height:100%; display:block;}
+
+  /* vignette cinematográfica */
+  #vignette{
+    position:absolute; inset:0; pointer-events:none; z-index:2;
+    background:radial-gradient(ellipse at 50% 46%, rgba(0,0,0,0) 55%, rgba(20,8,12,0.38) 100%);
+  }
+
+  /* flores */
+  .flower{transform-box:fill-box; transform-origin:bottom center;}
+  .flower.sway{animation:sway var(--dur,4s) ease-in-out infinite; animation-delay:var(--del,0s);}
+  @keyframes sway{
+    0%,100%{transform:rotate(-3.5deg);}
+    50%{transform:rotate(3.5deg);}
+  }
+  .gust-sway{transform-box:fill-box; transform-origin:bottom center;}
+  .gust .gust-sway{animation:gustSway 1.7s cubic-bezier(.5,0,.3,1);}
+  @keyframes gustSway{
+    0%{transform:rotate(0deg);}
+    35%{transform:rotate(11deg);}
+    70%{transform:rotate(-6deg);}
+    100%{transform:rotate(0deg);}
+  }
+
+  /* personajes */
+  .figure{transform-box:fill-box;}
+  .idle-bob{animation:bob 2.6s ease-in-out infinite;}
+  @keyframes bob{
+    0%,100%{transform:translateY(0px);}
+    50%{transform:translateY(-3px);}
+  }
+  .leg{transform-box:fill-box; transform-origin:top center;}
+  .arm{transform-box:fill-box; transition:transform 0.55s cubic-bezier(.4,0,.2,1);}
+  .head-group{transform-box:fill-box; transition:transform 0.5s ease;}
+  @keyframes legCycleL{0%,100%{transform:rotate(-18deg);} 50%{transform:rotate(21deg);}}
+  @keyframes legCycleR{0%,100%{transform:rotate(21deg);} 50%{transform:rotate(-18deg);}}
+  @keyframes armCycleL{0%,100%{transform:rotate(20deg);} 50%{transform:rotate(-18deg);}}
+  @keyframes armCycleR{0%,100%{transform:rotate(-18deg);} 50%{transform:rotate(20deg);}}
+
+  /* pelo con física */
+  .hair{transform-box:fill-box; transform-origin:50% 14%;}
+  .hair-sway{animation:hairSway 5s ease-in-out infinite;}
+  @keyframes hairSway{
+    0%,100%{transform:rotate(0deg);}
+    50%{transform:rotate(4.5deg);}
+  }
+  .gust .hair-sway{animation:hairSway 1.6s ease-in-out 2; animation-delay:0s;}
+  .skirt-sway{transform-box:fill-box; transform-origin:50% 18%;}
+  .skirt-drift{animation:skirtDrift 5s ease-in-out infinite;}
+  @keyframes skirtDrift{
+    0%,100%{transform:rotate(0deg);}
+    50%{transform:rotate(3deg);}
+  }
+
+  .blush{opacity:0; transition:opacity 0.8s ease;}
+  .blush.on{opacity:1;}
+
+  .rays{transform-box:view-box; transform-origin:1300px 440px; animation:raySpin 90s linear infinite;}
+  @keyframes raySpin{from{transform:rotate(0deg);} to{transform:rotate(360deg);}}
+
+  .star{opacity:0;}
+
+  /* pétalos */
+  #petalLayer{position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:3;}
+  .petal{position:absolute; top:-5%; animation-name:fall; animation-timing-function:linear; animation-iteration-count:infinite;}
+  .petal-inner{animation-name:sideways; animation-timing-function:ease-in-out; animation-iteration-count:infinite; display:block;}
+  .petal-shape{
+    width:12px; height:12px;
+    background:var(--petal);
+    border-radius:2px 12px 2px 12px;
+    opacity:0.75;
+  }
+  @keyframes fall{
+    from{ transform: translateY(-12vh) rotate(0deg); }
+    to{ transform: translateY(112vh) rotate(420deg); }
+  }
+  @keyframes sideways{
+    0%,100%{ transform:translateX(0); }
+    50%{ transform:translateX(48px); }
+  }
+
+  /* polvo dorado del final */
+  #glowLayer{position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:3;}
+  .firefly{
+    position:absolute; width:5px; height:5px; border-radius:50%;
+    background:#FFE9A8;
+    box-shadow:0 0 9px 3px rgba(255,224,130,0.85);
+    opacity:0;
+    animation:fireflyDrift 7s ease-in-out infinite, fireflyBlink 2.4s ease-in-out infinite;
+  }
+  @keyframes fireflyDrift{
+    0%,100%{transform:translate(0,0);}
+    25%{transform:translate(14px,-22px);}
+    50%{transform:translate(-10px,-40px);}
+    75%{transform:translate(-18px,-14px);}
+  }
+  @keyframes fireflyBlink{
+    0%,100%{opacity:0;}
+    45%{opacity:0.9;}
+    60%{opacity:0.4;}
+  }
+
+  /* transición dorada */
+  #goldOverlay{
+    position:absolute; inset:0; z-index:4;
+    background:linear-gradient(180deg, rgba(59,37,71,0) 0%, rgba(184,91,60,0.5) 50%, rgba(243,178,63,0.94) 100%);
+    opacity:0; pointer-events:none;
+    transition:opacity 3.2s ease;
+  }
+
+  /* overlays */
+  .full-overlay{
+    position:absolute; inset:0; z-index:6;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; text-align:center;
+    padding:8vh 6vw;
+    background:radial-gradient(ellipse at center, rgba(35,18,24,0.5) 0%, rgba(25,13,17,0.88) 100%);
+    opacity:1;
+    transition:opacity 1.1s ease;
+    overflow-y:auto;
+  }
+  .full-overlay.hidden{opacity:0; pointer-events:none;}
+  #startOverlay{
+    background:radial-gradient(ellipse at center, rgba(35,18,24,0.30) 0%, rgba(22,12,16,0.60) 100%);
+  }
+  .eyebrow-flower{font-size:2.1rem; margin-bottom:0.6rem; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4)); animation:floatflower 4s ease-in-out infinite;}
+  @keyframes floatflower{0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);}}
+  .title{
+    font-family:'Fraunces', serif;
+    font-optical-sizing:auto; font-weight:600;
+    font-size:clamp(1.9rem, 5vw, 3.2rem);
+    color:var(--text-cream);
+    line-height:1.15; max-width:16ch;
+    margin:0 0 1rem 0;
+    text-shadow:0 2px 18px rgba(10,5,8,0.65);
+  }
+  .intro-line, .dedication-body{
+    font-family:'Fraunces', serif; font-style:italic; font-weight:400;
+    font-size:clamp(1.05rem, 2.4vw, 1.3rem);
+    color:var(--text-muted);
+    max-width:40ch; line-height:1.6; margin:0 auto 1.8rem auto;
+    text-shadow:0 2px 14px rgba(10,5,8,0.6);
+  }
+  .dedication-body{max-width:44ch;}
+  .signature{
+    font-family:'Fraunces', serif; font-style:italic;
+    color:var(--accent-soft); font-size:1.05rem;
+    margin:-0.6rem auto 1.8rem auto;
+    text-shadow:0 2px 12px rgba(10,5,8,0.6);
+  }
+  .role-hint{
+    font-family:'Fraunces', serif; font-style:italic;
+    color:var(--text-muted);
+    font-size:clamp(0.95rem, 2vw, 1.1rem);
+    max-width:32ch; line-height:1.5;
+    margin:-0.6rem auto 1.6rem auto;
+  }
+  button{
+    font-family:'Manrope',sans-serif; font-weight:700; font-size:1rem; letter-spacing:0.01em;
+    color:var(--text-cream);
+    background:var(--accent);
+    border:none; padding:0.9rem 2.1rem; border-radius:999px; cursor:pointer;
+    box-shadow:0 8px 24px rgba(176,70,111,0.4);
+    transition:transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+  button:hover{transform:translateY(-2px); box-shadow:0 12px 28px rgba(176,70,111,0.5); background:#c1567f;}
+  button:focus-visible{outline:2px solid var(--text-cream); outline-offset:3px;}
+  button:active{transform:translateY(0px) scale(0.98);}
+  .ghost-btn{
+    background:transparent;
+    border:1px solid rgba(251,243,221,0.28);
+    color:var(--text-muted);
+    box-shadow:none;
+    font-weight:600; font-size:0.9rem; padding:0.7rem 1.6rem;
+    margin-top:1rem;
+  }
+  .ghost-btn:hover{background:rgba(251,243,221,0.08); color:var(--text-cream); box-shadow:none;}
+
+  /* diálogo */
+  #dialogueLayer{
+    position:absolute; left:0; right:0; bottom:0; z-index:5;
+    display:flex; justify-content:center;
+    padding:0 5vw calc(4vh + env(safe-area-inset-bottom,0px)) 5vw;
+    opacity:0; transform:translateY(18px);
+    transition:opacity 0.5s ease, transform 0.5s ease;
+    pointer-events:none;
+  }
+  #dialogueLayer.visible{opacity:1; transform:translateY(0); pointer-events:auto;}
+  #dialoguePanel{
+    width:min(640px, 100%);
+    background:var(--panel-bg);
+    border:1px solid var(--panel-border);
+    border-radius:22px;
+    padding:1.4rem 1.6rem 1.3rem 1.6rem;
+    backdrop-filter:blur(8px);
+    box-shadow:0 18px 50px rgba(10,5,8,0.45);
+    cursor:pointer;
+    outline:none;
+  }
+  #dialoguePanel:focus-visible{border-color:var(--text-cream);}
+  #dialoguePanel.no-tap{cursor:default;}
+  #dialogueText{
+    font-family:'Fraunces', serif; font-style:italic; font-weight:400;
+    color:var(--text-cream);
+    font-size:clamp(1rem, 2.3vw, 1.18rem);
+    line-height:1.55; margin:0;
+  }
+  #tapHint{
+    font-family:'Manrope',sans-serif; font-size:0.72rem; letter-spacing:0.03em;
+    color:var(--text-muted); margin-top:0.7rem; opacity:0.75;
+  }
+  #choiceList{list-style:none; margin:1rem 0 0 0; padding:0; display:flex; flex-direction:column; gap:0.55rem;}
+  .choice-btn{
+    width:100%; text-align:left;
+    background:rgba(251,243,221,0.06);
+    border:1px solid rgba(251,243,221,0.22);
+    color:var(--text-cream);
+    font-family:'Manrope',sans-serif; font-weight:600; font-size:0.96rem;
+    padding:0.75rem 1rem; border-radius:14px; cursor:pointer; box-shadow:none;
+    transition:background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  }
+  .choice-btn:hover{background:rgba(176,70,111,0.35); border-color:var(--accent-soft); transform:translateX(3px);}
+  .choice-btn:focus-visible{outline:2px solid var(--text-cream); outline-offset:2px;}
+
+  /* nota del final (mobile-first) */
+  #noteArea{display:none; margin-top:1rem;}
+  #noteInput{
+    width:100%; min-height:88px; resize:vertical; display:block;
+    background:rgba(251,243,221,0.08);
+    border:1px solid rgba(251,243,221,0.25);
+    border-radius:14px; color:var(--text-cream);
+    font-family:'Manrope',sans-serif; font-size:0.95rem; line-height:1.5;
+    padding:0.7rem 0.9rem; outline:none;
+  }
+  #noteInput:focus-visible{border-color:var(--text-cream);}
+  #noteButtons{display:flex; flex-direction:column; gap:0.55rem; margin-top:0.7rem;}
+  #noteButtons .choice-btn{width:100%; box-shadow:none;}
+
+  #restartBtn{
+    position:absolute; top:calc(1rem + env(safe-area-inset-top,0px)); right:1rem;
+    background:rgba(38,20,18,0.55);
+    border:1px solid rgba(251,243,221,0.25);
+    color:var(--text-muted);
+    font-size:0.78rem; font-weight:600;
+    padding:0.5rem 0.9rem; border-radius:999px; box-shadow:none; z-index:7;
+  }
+  #restartBtn:hover{background:rgba(38,20,18,0.8); color:var(--text-cream); transform:none; box-shadow:none;}
+
+  .planted-pop{animation:plantedPop 0.6s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes plantedPop{from{transform:scale(0); opacity:0;} to{transform:scale(1); opacity:1;}}
+
+  @media (prefers-reduced-motion: reduce){
+    .flower.sway, .idle-bob, .petal, .petal-inner, .hair-sway, .skirt-drift, .firefly, .rays, .eyebrow-flower{animation:none !important;}
+    .gust .gust-sway{animation:none !important;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stageWrap">
+    <svg id="stageSvg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3B2547"/>
+          <stop offset="55%" stop-color="#B85B3C"/>
+          <stop offset="100%" stop-color="#F3B23F"/>
+        </linearGradient>
+        <linearGradient id="duskSkyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#221030"/>
+          <stop offset="50%" stop-color="#5A2B3C"/>
+          <stop offset="100%" stop-color="#93453A"/>
+        </linearGradient>
+        <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#FFE7A0" stop-opacity="0.95"/>
+          <stop offset="100%" stop-color="#FFE7A0" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="fieldGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#8A6A22"/>
+          <stop offset="100%" stop-color="#4E3A0F"/>
+        </linearGradient>
+        <linearGradient id="himShirt" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4E8579"/>
+          <stop offset="100%" stop-color="#2E5650"/>
+        </linearGradient>
+        <linearGradient id="himSleeve" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3F6E66"/>
+          <stop offset="100%" stop-color="#264740"/>
+        </linearGradient>
+        <linearGradient id="herBlouse" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#FFF7EA"/>
+          <stop offset="100%" stop-color="#EDDCC3"/>
+        </linearGradient>
+        <linearGradient id="herSleeve" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#EFE2C9"/>
+          <stop offset="100%" stop-color="#D8C4A6"/>
+        </linearGradient>
+        <linearGradient id="skirtGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#B2506E"/>
+          <stop offset="100%" stop-color="#7A3250"/>
+        </linearGradient>
+        <linearGradient id="pantsGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#46332A"/>
+          <stop offset="100%" stop-color="#2A1E18"/>
+        </linearGradient>
+        <linearGradient id="pantsDark" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3A2B21"/>
+          <stop offset="100%" stop-color="#221713"/>
+        </linearGradient>
+        <linearGradient id="herHair" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#5A3322"/>
+          <stop offset="100%" stop-color="#3A1E12"/>
+        </linearGradient>
+        <linearGradient id="skinWarm" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#EAC099"/>
+          <stop offset="100%" stop-color="#C98C62"/>
+        </linearGradient>
+        <linearGradient id="skinCool" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#E3AE7E"/>
+          <stop offset="100%" stop-color="#B27A4E"/>
+        </linearGradient>
+        <filter id="blurFar"><feGaussianBlur stdDeviation="1.5"/></filter>
+      </defs>
+
+      <!-- cielo -->
+      <rect x="0" y="0" width="1600" height="900" fill="url(#skyGrad)"/>
+
+      <!-- estrellas que aparecerán al atardecer -->
+      <g id="starsGroup">
+        <circle class="star" cx="140" cy="120" r="1.6" fill="#FFF3D6"/>
+        <circle class="star" cx="360" cy="84" r="1.3" fill="#FFF3D6"/>
+        <circle class="star" cx="520" cy="170" r="1.8" fill="#FFF3D6"/>
+        <circle class="star" cx="690" cy="105" r="1.3" fill="#FFF3D6"/>
+        <circle class="star" cx="860" cy="160" r="1.6" fill="#FFF3D6"/>
+        <circle class="star" cx="1040" cy="90" r="1.4" fill="#FFF3D6"/>
+        <circle class="star" cx="1210" cy="150" r="1.7" fill="#FFF3D6"/>
+        <circle class="star" cx="230" cy="230" r="1.2" fill="#FFF3D6"/>
+        <circle class="star" cx="780" cy="240" r="1.2" fill="#FFF3D6"/>
+      </g>
+
+      <!-- sol + rayos -->
+      <g id="sunGroup">
+        <g id="sunRays" class="rays" opacity="0.16">
+          <polygon points="1300,440 1120,180 1180,180" fill="#FFD977"/>
+          <polygon points="1300,440 1440,160 1500,190" fill="#FFD977"/>
+          <polygon points="1300,440 1000,380 1000,450" fill="#FFD977"/>
+          <polygon points="1300,440 1560,520 1560,600" fill="#FFD977"/>
+          <polygon points="1300,440 1120,320 1090,250" fill="#FFD977"/>
+        </g>
+        <circle cx="1300" cy="440" r="150" fill="url(#sunGlow)"/>
+        <circle cx="1300" cy="440" r="62" fill="#FFE7A0"/>
+      </g>
+
+      <!-- pájaros -->
+      <g id="birds" opacity="0">
+        <g class="boid" transform="translate(160,170)">
+          <path d="M-18,5 Q-10,-9 0,0 Q10,-9 18,5 Q9,0 0,1 Q-9,0 -18,5 Z" fill="#3A2030"/>
+        </g>
+        <g class="boid" transform="translate(240,140)">
+          <path d="M-13,4 Q-7,-7 0,0 Q7,-7 13,4 Q6,0 0,1 Q-6,0 -13,4 Z" fill="#3A2030"/>
+        </g>
+      </g>
+
+      <!-- colinas lejanas -->
+      <path d="M0,560 C220,500 420,540 620,510 C860,475 1050,530 1250,500 C1400,478 1520,505 1600,485 L1600,620 L0,620 Z" fill="#6E4A57" opacity="0.75"/>
+      <path d="M0,600 C260,555 500,600 760,565 C1000,535 1220,585 1600,545 L1600,650 L0,650 Z" fill="#472C39" opacity="0.9"/>
+
+      <!-- campo -->
+      <rect x="0" y="600" width="1600" height="300" fill="url(#fieldGrad)"/>
+
+      <g id="flowerFieldBack" filter="url(#blurFar)"></g>
+
+      <!-- niébla de profundidad -->
+      <rect x="0" y="560" width="1600" height="140" fill="url(#duskSkyGrad)" opacity="0.12"/>
+
+      <!-- personajes -->
+      <g id="himWrap" class="figure" transform="translate(-200,540)">
+        <g class="idle-bob">
+          <!-- sombra en el suelo -->
+          <ellipse cx="70" cy="268" rx="52" ry="7" fill="#1B110C" opacity="0.4"/>
+          <!-- piernas -->
+          <g id="himLegL" class="leg"><rect x="42" y="168" width="20" height="92" rx="9" fill="url(#pantsGrad)"/></g>
+          <g id="himLegR" class="leg"><rect x="76" y="168" width="20" height="92" rx="9" fill="url(#pantsDark)"/></g>
+          <!-- zapatos -->
+          <rect x="36" y="252" width="30" height="14" rx="6" fill="#1C1310"/>
+          <rect x="70" y="252" width="30" height="14" rx="6" fill="#150F0C"/>
+          <!-- brazo lejano -->
+          <g class="arm" id="himArmFar" style="transform-origin:50% 0%;">
+            <rect x="28" y="94" width="16" height="64" rx="8" fill="url(#himSleeve)"/>
+            <circle cx="36" cy="158" r="8.5" fill="url(#skinCool)"/>
+          </g>
+          <!-- torso -->
+          <path d="M30,96 Q70,78 108,96 L100,186 Q70,200 38,186 Z" fill="url(#himShirt)"/>
+          <path d="M56,84 Q70,74 84,84 L80,96 L60,96 Z" fill="#F2E7D2"/>
+          <!-- brazo cercano -->
+          <g class="arm" id="himArmNear" style="transform-origin:50% 0%;">
+            <path d="M100,96 Q110,120 106,148 Q98,150 92,148 Q88,120 96,96 Z" fill="url(#himShirt)"/>
+            <circle cx="104" cy="166" r="9" fill="url(#skinCool)"/>
+          </g>
+          <!-- ramo en la mano (oculto hasta recogerlo) -->
+          <g id="himFlowerHand" opacity="0">
+            <g transform="translate(104,158) rotate(-18)">
+              <line x1="-4" y1="6" x2="-13" y2="-20" stroke="#4E7A3A" stroke-width="2"/>
+              <line x1="0" y1="6" x2="0" y2="-28" stroke="#4E7A3A" stroke-width="2.4"/>
+              <line x1="4" y1="6" x2="13" y2="-18" stroke="#4E7A3A" stroke-width="2"/>
+              <path d="M-8,2 L8,2 L5,20 Q0,23 -5,20 Z" fill="#B5483F"/>
+              <path d="M-8,2 L8,2 L6,12 L-6,12 Z" fill="#9A3A33"/>
+              <g transform="translate(-13,-22)">
+                <circle cx="-3" cy="-2" r="3.6" fill="#E4A417"/>
+                <circle cx="2" cy="-3" r="3.2" fill="#F5C518"/>
+                <circle cx="2" cy="3" r="3.2" fill="#F5C518"/>
+                <circle cx="-3" cy="3" r="3.2" fill="#FBD257"/>
+                <circle cx="0" cy="0" r="2" fill="#6B3F14"/>
+              </g>
+              <g transform="translate(0,-30)">
+                <circle cx="0" cy="-4" r="4" fill="#F5C518"/>
+                <circle cx="4" cy="-1" r="3.6" fill="#E4A417"/>
+                <circle cx="3" cy="4" r="3.6" fill="#FBD257"/>
+                <circle cx="-3" cy="4" r="3.6" fill="#E4A417"/>
+                <circle cx="-4" cy="-1" r="3.6" fill="#F5C518"/>
+                <circle cx="0" cy="0" r="2.4" fill="#6B3F14"/>
+              </g>
+              <g transform="translate(13,-20)">
+                <circle cx="-3" cy="-2" r="3.4" fill="#F5C518"/>
+                <circle cx="3" cy="-2" r="3" fill="#E4A417"/>
+                <circle cx="0" cy="3" r="3" fill="#F5C518"/>
+                <circle cx="0" cy="-1" r="1.9" fill="#6B3F14"/>
+              </g>
+            </g>
+          </g>
+          <!-- cuello -->
+          <rect x="60" y="74" width="20" height="16" rx="6" fill="url(#skinCool)"/>
+          <!-- cabeza -->
+          <g class="head-group" id="himHead" style="transform-origin:50% 80%;">
+            <circle cx="70" cy="58" r="26.5" fill="url(#skinWarm)"/>
+            <path d="M44,52 Q44,20 70,20 Q96,20 96,52 Q82,30 70,30 Q58,30 44,52 Z" fill="#241A14"/>
+            <path d="M54,26 Q58,12 74,13 Q88,14 92,24 Q80,20 70,21 Q60,21 54,26 Z" fill="#2E1D12"/>
+            <circle cx="58" cy="58" r="9.6" fill="none" stroke="#241A14" stroke-width="2.4"/>
+            <circle cx="82" cy="58" r="9.6" fill="none" stroke="#241A14" stroke-width="2.4"/>
+            <line x1="67.6" y1="57" x2="72.4" y2="57" stroke="#241A14" stroke-width="2.4"/>
+            <line x1="48.4" y1="56" x2="41" y2="54" stroke="#241A14" stroke-width="2"/>
+            <line x1="91.6" y1="56" x2="99" y2="54" stroke="#241A14" stroke-width="2"/>
+            <ellipse class="blush" cx="50" cy="68" rx="6.5" ry="3.5" fill="#E56B7A"/>
+            <ellipse class="blush" cx="90" cy="68" rx="6.5" ry="3.5" fill="#E56B7A"/>
+            <path d="M58,72 Q70,79 82,72" stroke="#8A4B33" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </g>
+        </g>
+      </g>
+
+      <g id="herWrap" class="figure" transform="translate(820,540)">
+        <g class="idle-bob">
+          <!-- sombra en el suelo -->
+          <ellipse cx="70" cy="268" rx="48" ry="7" fill="#1B110C" opacity="0.4"/>
+          <!-- piernas -->
+          <g id="herLegL"><rect x="46" y="192" width="16" height="70" rx="8" fill="#E7B98C"/></g>
+          <g id="herLegR"><rect x="74" y="192" width="16" height="70" rx="8" fill="#D8A274"/></g>
+          <!-- sandalias -->
+          <rect x="42" y="258" width="23" height="10" rx="5" fill="#7A3B52"/>
+          <rect x="70" y="258" width="23" height="10" rx="5" fill="#642F44"/>
+          <!-- brazo lejano -->
+          <g class="arm" id="herArmFar" style="transform-origin:50% 0%;">
+            <rect x="92" y="96" width="15" height="62" rx="7.5" fill="url(#herSleeve)"/>
+            <circle cx="99" cy="158" r="8" fill="#DDA97A"/>
+          </g>
+          <!-- falda con vuelo -->
+          <g class="skirt-sway skirt-drift">
+            <path d="M26,152 L114,152 L127,198 Q70,216 13,198 Z" fill="url(#skirtGrad)"/>
+            <path d="M13,197 Q30,206 46,199 Q60,207 76,200 Q92,207 108,199 Q120,206 127,197 Q120,214 70,216 Q20,214 13,197 Z" fill="#662A44"/>
+          </g>
+          <!-- blusa -->
+          <path d="M32,96 Q70,78 108,96 L104,154 L36,154 Z" fill="url(#herBlouse)"/>
+          <path d="M58,84 Q70,76 82,84 L80,96 L60,96 Z" fill="#F7EBD6"/>
+          <!-- brazo cercano -->
+          <g class="arm" id="herArmNear" style="transform-origin:50% 0%;">
+            <path d="M30,96 Q26,112 28,142 Q34,146 28,158 Q22,158 24,142 Q20,112 30,96 Z" fill="url(#herBlouse)"/>
+            <circle cx="28" cy="162" r="8.5" fill="#E7B98C"/>
+          </g>
+          <!-- ramo recibido -->
+          <g id="herFlowerHand" opacity="0">
+            <g transform="translate(14,156) rotate(14)">
+              <line x1="0" y1="8" x2="0" y2="-22" stroke="#4E7A3A" stroke-width="2.2"/>
+              <line x1="-4" y1="8" x2="-11" y2="-16" stroke="#4E7A3A" stroke-width="1.8"/>
+              <line x1="4" y1="8" x2="11" y2="-14" stroke="#4E7A3A" stroke-width="1.8"/>
+              <path d="M-7,3 L7,3 L4.4,17 Q0,20 -4.4,17 Z" fill="#9A3A33"/>
+              <g transform="translate(0,-24)">
+                <circle cx="0" cy="-3.6" r="3.6" fill="#F5C518"/>
+                <circle cx="3.4" cy="-0.6" r="3.2" fill="#E4A417"/>
+                <circle cx="2.4" cy="3.4" r="3.2" fill="#FBD257"/>
+                <circle cx="-2.4" cy="3.4" r="3.2" fill="#E4A417"/>
+                <circle cx="-3.4" cy="-0.6" r="3.2" fill="#F5C518"/>
+                <circle cx="0" cy="0" r="2.1" fill="#6B3F14"/>
+              </g>
+              <g transform="translate(-11,-18)">
+                <circle cx="-3" cy="-2" r="3.2" fill="#F5C518"/>
+                <circle cx="3" cy="-2" r="2.8" fill="#E4A417"/>
+                <circle cx="0" cy="3" r="2.8" fill="#F5C518"/>
+                <circle cx="0" cy="-1" r="1.8" fill="#6B3F14"/>
+              </g>
+              <g transform="translate(11,-16)">
+                <circle cx="-2.6" cy="-2" r="3" fill="#E4A417"/>
+                <circle cx="2.6" cy="-2" r="2.6" fill="#F5C518"/>
+                <circle cx="0" cy="2.6" r="2.6" fill="#FBD257"/>
+                <circle cx="0" cy="-1" r="1.7" fill="#6B3F14"/>
+              </g>
+            </g>
+          </g>
+          <!-- cuello -->
+          <rect x="61" y="76" width="18" height="14" rx="6" fill="#E7B98C"/>
+          <!-- cabeza + pelo largo -->
+          <g class="head-group" id="herHead" style="transform-origin:50% 32%;">
+            <g class="hair hair-sway">
+              <!-- melena trasera -->
+              <path d="M32,88 Q24,40 70,30 Q118,42 108,88 Q116,114 108,142 Q98,150 104,176 Q94,146 96,118 Q96,70 70,66 Q44,70 44,118 Q46,146 36,176 Q42,150 32,142 Q24,114 32,88 Z" fill="url(#herHair)"/>
+              <!-- mechones -->
+              <path d="M34,90 Q40,118 34,142 Q44,126 46,96 Z" fill="#4A2A1E"/>
+              <path d="M106,90 Q100,118 106,142 Q96,126 94,96 Z" fill="#332012"/>
+            </g>
+            <circle cx="70" cy="58" r="25" fill="#EAC099"/>
+            <!-- flequillo -->
+            <path d="M46,50 Q47,26 70,24 Q93,26 94,50 Q82,44 70,46 Q58,44 46,50 Z" fill="#4A2A1E"/>
+            <!-- ojo -->
+            <path d="M55,55 q6,-3 10,0" stroke="#2A1710" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+            <path d="M75,55 q6,-3 10,0" stroke="#2A1710" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+            <circle cx="60" cy="58" r="2.1" fill="#2A1710"/>
+            <circle cx="80" cy="58" r="2.1" fill="#2A1710"/>
+            <ellipse class="blush" cx="52" cy="67" rx="6.5" ry="3.5" fill="#E56B7A"/>
+            <ellipse class="blush" cx="88" cy="67" rx="6.5" ry="3.5" fill="#E56B7A"/>
+            <path d="M58,72 Q70,79 82,72" stroke="#8A4B33" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </g>
+        </g>
+      </g>
+
+      <!-- manos entrelazadas para el final -->
+      <g id="handClasp" opacity="0">
+        <ellipse cx="-5" cy="-2" rx="9.5" ry="6" fill="#C98C62"/>
+        <ellipse cx="5" cy="1" rx="9.5" ry="6" fill="#DDA97A"/>
+      </g>
+
+      <g id="flowerFieldFront"></g>
+      <g id="plantedLayer" transform="translate(1280,700)"></g>
+
+      <!-- velo de atardecer que cruza todo -->
+      <rect id="duskSky" x="0" y="0" width="1600" height="900" fill="url(#duskSkyGrad)" opacity="0" pointer-events="none"/>
+    </svg>
+  </div>
+
+  <div id="vignette"></div>
+  <div id="petalLayer"></div>
+  <div id="glowLayer"></div>
+  <div id="goldOverlay"></div>
+
+  <button id="restartBtn" type="button">Empezar de nuevo</button>
+
+  <div id="startOverlay" class="full-overlay" aria-label="Inicio de la historia">
+    <div class="eyebrow-flower">🌼</div>
+    <h1 class="title">Un atardecer y un campo</h1>
+    <p class="intro-line">Antes de que acabe este día, hay una historia que solo tú puedes contar.</p>
+    <p class="role-hint">En esta historia solo estamos los dos, tú y yo</p>
+    <button id="startBtn" type="button">Comenzar</button>
+  </div>
+
+  <div id="endOverlay" class="full-overlay hidden" aria-label="Dedicación final">
+    <div class="eyebrow-flower">🌼</div>
+    <h1 class="title" id="endTitle">Para ti</h1>
+    <p class="dedication-body" id="endBody"></p>
+    <p class="signature" id="endSignature">Con todo mi cariño.</p>
+    <button id="replayBtn" class="ghost-btn" type="button">Volver a empezar</button>
+  </div>
+
+  <div id="dialogueLayer">
+    <div id="dialoguePanel" role="button" tabindex="0" aria-label="Diálogo, toca o pulsa Enter para continuar">
+      <p id="dialogueText" aria-live="polite"></p>
+      <ul id="choiceList"></ul>
+      <div id="tapHint">toca o pulsa Enter para continuar</div>
+      <div id="noteArea">
+        <textarea id="noteInput" aria-label="Escribe lo que sientes" placeholder="Escribe lo que sientes..." spellcheck="false"></textarea>
+        <div id="noteButtons">
+          <button type="button" class="choice-btn" id="noteReadBtn">Leer ahora mismo</button>
+          <button type="button" class="choice-btn" id="noteKeepBtn">Guardar para luego</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var RM = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- flores con variedad de especies ---------- */
+  function petals(cx, cy, r, color, n){
+    var s = "";
+    for(var i=0;i<n;i++){
+      var a = Math.PI*2*i/n + (n%2 ? 0.35 : 0);
+      var px = cx + Math.cos(a)*r;
+      var py = cy + Math.sin(a)*r;
+      s += '<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+(r*0.62).toFixed(1)+'" fill="'+color+'"/>';
+    }
+    return s;
+  }
+
+  function makeFlower(cx, cy, scale, hue){
+    var deep = hue === 1;
+    var color = deep ? "var(--petal-deep)" : "var(--petal)";
+    var colorAlt = deep ? "var(--petal)" : "var(--petal-soft)";
+    var t = Math.random();
+    var head;
+    if(t < 0.45){
+      head = petals(0,-2,8.5,color,8) + '<circle cx="0" cy="-2" r="3.8" fill="var(--petal-center)"/>';
+    } else if(t < 0.78){
+      head = petals(0,-2,9.5,color,5) + petals(0,-2,6,colorAlt,5) + '<circle cx="0" cy="-2" r="4" fill="var(--petal-center)"/>';
+    } else {
+      head = '<circle cx="0" cy="-9" r="5.4" fill="'+color+'"/>' +
+             '<circle cx="-5" cy="-5" r="5" fill="'+colorAlt+'"/>' +
+             '<circle cx="5" cy="-5" r="5" fill="'+colorAlt+'"/>' +
+             '<circle cx="0" cy="-2" r="6" fill="'+color+'"/>' +
+             '<circle cx="0" cy="-2" r="3.4" fill="var(--petal-center)"/>';
+    }
+    return '<g transform="translate('+cx+','+cy+') scale('+scale+')">' +
+      '<g class="flower sway" style="--dur:'+(3+Math.random()*2.4).toFixed(2)+'s; --del:'+(Math.random()*3).toFixed(2)+'s;">' +
+        '<g class="gust-sway">' +
+          '<rect x="-1.5" y="0" width="3" height="17" rx="1.2" fill="var(--leaf)"/>' +
+          '<path d="M-1.5,4 Q-7,1 -9,-3 Q-4,-3 -1.5,2 Z" fill="var(--leaf)"/>' +
+          '<g transform="translate(0,-2)">' + head + '</g>' +
+        '</g>' +
+      '</g>' +
+    '</g>';
+  }
+
+  function scatterFlowers(containerId, count, yMin, yMax, sMin, sMax, cropTop){
+    var el = document.getElementById(containerId);
+    var html = "";
+    for(var i=0;i<count;i++){
+      var cx = Math.random()*1600;
+      var cy = yMin + Math.random()*(yMax-yMin);
+      var s = sMin + Math.random()*(sMax-sMin);
+      html += makeFlower(cx, cy, s, Math.random() > 0.34 ? 1 : 0);
+    }
+    el.innerHTML = html;
+  }
+
+  function scatterGrass(containerId, count){
+    var el = document.getElementById(containerId);
+    var html = "";
+    for(var i=0;i<count;i++){
+      var x = Math.random()*1600;
+      var y = 630 + Math.random()*250;
+      var h = 8 + Math.random()*16;
+      html += '<path d="M'+x+','+(y+h)+' q'+((Math.random()-0.5)*8)+',-'+h*0.6+' '+((Math.random()-0.5)*10)+',-'+h+'" stroke="#6E7B3A" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.5"/>';
+    }
+    el.innerHTML += html;
+  }
+
+  scatterFlowers("flowerFieldBack", 130, 626, 762, 0.8, 1.5);
+  scatterGrass("flowerFieldBack", 90);
+  scatterFlowers("flowerFieldFront", 95, 758, 894, 1.5, 2.6);
+  scatterGrass("flowerFieldFront", 60);
+  gsap.set(["#flowerFieldBack", "#flowerFieldFront"], {opacity: 0.55});
+
+  /* ---------- ráfagas de viento periódicas ---------- */
+  function windGusts(){
+    if(RM) return;
+    var svg = document.getElementById("stageSvg");
+    function gust(){
+      svg.classList.add("gust");
+      setTimeout(function(){ svg.classList.remove("gust"); }, 1700);
+    }
+    gust();
+    setInterval(gust, 7000);
+  }
+  windGusts();
+
+  /* ---------- pétalos ---------- */
+  var petalLayer = document.getElementById("petalLayer");
+  var PM = ["var(--petal)","var(--petal-deep)","var(--petal-soft)"];
+  for(var i=0;i<18;i++){
+    var outer = document.createElement("div");
+    outer.className = "petal";
+    var inner = document.createElement("div");
+    inner.className = "petal-inner";
+    var shape = document.createElement("div");
+    shape.className = "petal-shape";
+    shape.style.background = PM[i%3];
+    var w = 8 + Math.random()*8;
+    shape.style.width = w.toFixed(0) + "px";
+    shape.style.height = w.toFixed(0) + "px";
+    inner.appendChild(shape);
+    outer.appendChild(inner);
+    var left = Math.random()*100;
+    var fallDur = 9 + Math.random()*9;
+    var sideDur = 3 + Math.random()*2.4;
+    outer.style.left = left + "%";
+    outer.style.animationDuration = fallDur.toFixed(2) + "s";
+    outer.style.animationDelay = (-(Math.random()*fallDur)).toFixed(2) + "s";
+    inner.style.animationDuration = sideDur.toFixed(2) + "s";
+    inner.style.animationDelay = (-(Math.random()*sideDur)).toFixed(2) + "s";
+    outer.style.opacity = (0.4 + Math.random()*0.4).toFixed(2);
+    shape.style.opacity = "0.75";
+    petalLayer.appendChild(outer);
+  }
+
+  /* ---------- luciérnagas del final ---------- */
+  var glowLayer = document.getElementById("glowLayer");
+  function spawnFireflies(){
+    if(RM) return;
+    for(var i=0;i<26;i++){
+      var f = document.createElement("div");
+      f.className = "firefly";
+      f.style.left = (Math.random()*96).toFixed(1) + "%";
+      f.style.top = (32 + Math.random()*54).toFixed(1) + "%";
+      f.style.animationDelay = (-(Math.random()*7)).toFixed(2) + "s, " + (-(Math.random()*2.4)).toFixed(2) + "s";
+      glowLayer.appendChild(f);
+    }
+  }
+
+  /* ---------- referencias ---------- */
+  var dialogueLayer = document.getElementById("dialogueLayer");
+  var dialoguePanel = document.getElementById("dialoguePanel");
+  var dialogueText = document.getElementById("dialogueText");
+  var choiceList = document.getElementById("choiceList");
+  var tapHint = document.getElementById("tapHint");
+  var startOverlay = document.getElementById("startOverlay");
+  var endOverlay = document.getElementById("endOverlay");
+  var goldOverlay = document.getElementById("goldOverlay");
+  var restartBtn = document.getElementById("restartBtn");
+  var noteArea = document.getElementById("noteArea");
+  var noteInput = document.getElementById("noteInput");
+  var noteReadBtn = document.getElementById("noteReadBtn");
+  var noteKeepBtn = document.getElementById("noteKeepBtn");
+
+  var himLegL = document.getElementById("himLegL");
+  var himLegR = document.getElementById("himLegR");
+  var himArmNear = document.getElementById("himArmNear");
+  var himArmFar = document.getElementById("himArmFar");
+  var himHead = document.getElementById("himHead");
+  var himFlowerHand = document.getElementById("himFlowerHand");
+  var himWrap = document.getElementById("himWrap");
+  var himBlush = himHead.querySelectorAll(".blush");
+
+  var herLegL = document.getElementById("herLegL");
+  var herLegR = document.getElementById("herLegR");
+  var herArmNear = document.getElementById("herArmNear");
+  var herArmFar = document.getElementById("herArmFar");
+  var herHead = document.getElementById("herHead");
+  var herFlowerHand = document.getElementById("herFlowerHand");
+  var herWrap = document.getElementById("herWrap");
+  var herBlush = herHead.querySelectorAll(".blush");
+
+  var state = { greet:1, memory:1, accepted:false, hugged:false, walk:null, slapAnswer:null, forgiveness:null, heldHands:false };
+
+  function blushOn(nodeList){
+    for(var i=0;i<nodeList.length;i++) nodeList[i].classList.add("on");
+    setTimeout(function(){
+      for(var k=0;k<nodeList.length;k++) nodeList[k].classList.remove("on");
+    }, 2600);
+  }
+
+  /* ---------- diálogo con transición suave ---------- */
+  var advanceHandler = null;
+
+  function onPanelClick(){
+    if(advanceHandler){
+      var fn = advanceHandler;
+      advanceHandler = null;
+      hideRaw();
+      fn();
+    }
+  }
+  dialoguePanel.addEventListener("click", onPanelClick);
+  dialoguePanel.addEventListener("keydown", function(e){
+    if(e.key === "Enter" || e.key === " "){ e.preventDefault(); onPanelClick(); }
+  });
+
+  function narrate(text, onDone){
+    noteArea.style.display = "none";
+    dialogueText.style.display = "";
+    choiceList.innerHTML = "";
+    dialogueText.textContent = text;
+    tapHint.style.display = "block";
+    dialoguePanel.classList.remove("no-tap");
+    advanceHandler = onDone;
+    showDialogue();
+    if(!document.activeElement || dialoguePanel !== document.activeElement){
+      dialoguePanel.focus({preventScroll:true});
+    }
+  }
+
+  function presentChoices(text, options){
+    noteArea.style.display = "none";
+    dialogueText.style.display = "";
+    dialogueText.textContent = text;
+    tapHint.style.display = "none";
+    dialoguePanel.classList.add("no-tap");
+    advanceHandler = null;
+    choiceList.innerHTML = "";
+    dialoguePanel.setAttribute("tabindex", "-1");
+    options.forEach(function(opt){
+      var li = document.createElement("li");
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "choice-btn";
+      btn.textContent = opt.label;
+      btn.addEventListener("click", function(e){
+        e.stopPropagation();
+        choiceList.innerHTML = "";
+        dialoguePanel.classList.remove("no-tap");
+        dialoguePanel.setAttribute("tabindex", "0");
+        hideRaw();
+        opt.onPick();
+      });
+      li.appendChild(btn);
+      choiceList.appendChild(li);
+    });
+    dialoguePanel.removeAttribute("tabindex");
+    showDialogue();
+    var first = choiceList.querySelector("button");
+    if(first) first.focus();
+  }
+
+  function showDialogue(){ dialogueLayer.classList.add("visible"); }
+  function hideRaw(){ dialogueLayer.classList.remove("visible"); }
+
+  /* ---------- gestos ---------- */
+  function gesture(el, transform, holdMs, resetTransform){
+    return new Promise(function(resolve){
+      el.style.transform = transform;
+      setTimeout(function(){
+        if(resetTransform !== null && resetTransform !== undefined){
+          el.style.transform = resetTransform;
+        }
+        resolve();
+      }, holdMs);
+    });
+  }
+
+  function wave(el){
+    return new Promise(function(resolve){
+      var n = 0;
+      var steps = ["rotate(-90deg)","rotate(-55deg)","rotate(-90deg)","rotate(-55deg)","rotate(0deg)"];
+      function step(){
+        if(n >= steps.length){ resolve(); return; }
+        el.style.transform = steps[n];
+        n++;
+        setTimeout(step, 240);
+      }
+      step();
+    });
+  }
+
+  function shakeHeadNo(el){
+    return new Promise(function(resolve){
+      var n = 0;
+      var steps = ["rotate(-14deg)","rotate(14deg)","rotate(-10deg)","rotate(0deg)"];
+      function step(){
+        if(n >= steps.length){ resolve(); return; }
+        el.style.transform = steps[n];
+        n++;
+        setTimeout(step, 220);
+      }
+      step();
+    });
+  }
+
+  /* ---------- caminata mejorada ---------- */
+  function walkToggle(on){
+    var legs = [himLegL, himLegR, herLegL, herLegR];
+    var farArms = [himArmFar, herArmFar];
+    var nearArms = [himArmNear, herArmNear];
+    if(on){
+      himLegL.style.animation = "legCycleL 0.62s ease-in-out infinite";
+      himLegR.style.animation = "legCycleR 0.62s ease-in-out infinite";
+      herLegL.style.animation = "legCycleL 0.62s ease-in-out infinite";
+      herLegR.style.animation = "legCycleR 0.62s ease-in-out infinite";
+      himArmFar.style.animation = "armCycleL 0.62s ease-in-out infinite";
+      himArmNear.style.animation = "armCycleR 0.62s ease-in-out infinite";
+      herArmFar.style.animation = "armCycleL 0.62s ease-in-out infinite";
+      herArmNear.style.animation = "armCycleR 0.62s ease-in-out infinite";
+      herLegL.style.transformBox = "fill-box";
+      herLegR.style.transformBox = "fill-box";
+    } else {
+      legs.forEach(function(l){
+        l.style.animation = "";
+        l.style.transform = "";
+      });
+      farArms.concat(nearArms).forEach(function(a){
+        a.style.animation = "";
+        a.style.transform = "";
+      });
+    }
+  }
+
+  /* ---------- cámara ---------- */
+  function kenBurns(){
+    if(RM) return;
+    gsap.fromTo("#stageWrap", {scale:1, xPercent:0, yPercent:0}, {
+      scale:1.06, xPercent:-0.8, yPercent:-0.6, duration:40,
+      ease:"sine.inOut", repeat:-1, yoyo:true
+    });
+  }
+  kenBurns();
+
+  /* ---------- arranque ---------- */
+  function begin(){
+    startOverlay.classList.add("hidden");
+    gsap.to(["#flowerFieldBack", "#flowerFieldFront"], {opacity:1, duration:1.1, ease:"power1.inOut"});
+
+    walkToggle(true);
+    gsap.to("#himWrap", {
+      duration: 2.6,
+      x: 760,
+      ease: "power2.out",
+      onComplete: function(){
+        walkToggle(false);
+        sceneGreeting();
+      }
+    });
+  }
+
+  /* ---------- escena 1: saludo ---------- */
+  function sceneGreeting(){
+    narrate("Se quedan parados en medio del campo, con casi tres años de distancia acomodándose entre los dos. Él traga aire y suelta su mejor intento:\n— Hola, ratona. Te veo mal.", function(){
+      presentChoices("¿Cómo le respondes?", [
+        {
+          label: "«Hola, Puerco.»",
+          onPick: function(){
+            state.greet = 1;
+            blushOn(himBlush);
+            narrate("— Jaja, sigues diciéndome así, a pesar de que siempre que te vas bajo de peso.", function(){ sceneMemory(); });
+          }
+        },
+        {
+          label: "Quedarte callada.",
+          onPick: function(){
+            state.greet = 2;
+            gesture(herHead, "rotate(-6deg)", 700, "rotate(0deg)").then(function(){
+              narrate("El silencio se le hace bola en la boca. — ¿Así de mal estamos? — pregunta bajito.", function(){ sceneMemory(); });
+            });
+          }
+        },
+        {
+          label: "Saludarlo con la mano.",
+          onPick: function(){
+            state.greet = 3;
+            wave(herArmNear).then(function(){
+              narrate("— Si lo sé: no somos los más expresivos... supongo — dice, y sonríe igual.", function(){ sceneMemory(); });
+            });
+          }
+        }
+      ]);
+    });
+  }
+
+  /* ---------- escena 2: recuerdo (Capy y Poncho) ---------- */
+  function sceneMemory(){
+    narrate("Se queda callado un rato, buscando con qué seguir.\n— ¿Estás durmiendo con Capy?\nEl capibara de peluche que te regaló hace tiempo, un nombre que no sabías que dolería escuchar aquí.\n— Yo no suelto a Poncho desde que te fuiste.\nPoncho, el erizo que le diste, y que supuestamente se parecía a él cuando lo viste la primera vez.", function(){
+      presentChoices("¿Qué haces con ese recuerdo?", [
+        {
+          label: "Sonreír y decir que Capy duerme contigo.",
+          onPick: function(){
+            state.memory = 1;
+            blushOn(herBlush);
+            narrate("— Entonces imagina que soy yo; eso me aliviaría un poco — dice, casi en secreto.", function(){ sceneFlowers(); });
+          }
+        },
+        {
+          label: "Decir que eso ya no importa.",
+          onPick: function(){
+            state.memory = 2;
+            narrate("Le baja el brazo y se queda mirando el pasto.\n— A mí sí me importa. Porque yo te lo di para que no te sientas sola...", function(){ sceneFlowers(); });
+          }
+        }
+      ]);
+    });
+  }
+
+  /* ---------- escena 3: el ramo ---------- */
+  function sceneFlowers(){
+    narrate("El día de la primavera llega al campo con su costumbre de flores amarillas; él nunca se la creyó, hasta hoy. Te da la espalda un segundo, se agacha entre las flores y elige el ramo más lleno de sol. Vuelve con vergüenza, después de haber ensayado diez veces.\n— Sé que no te gustan las flores. Pero lo mereces. Y es lo menos que puedo hacer ahora.", function(){
+      gsap.fromTo(himFlowerHand, {opacity:0}, {opacity:1, duration:0.6});
+      presentChoices("Te ofrece el ramo de flores amarillas.", [
+        {
+          label: "Tomar el ramo y abrazarlo.",
+          onPick: function(){
+            state.accepted = true;
+            state.hugged = true;
+            himFlowerHand.style.opacity = 0;
+            herFlowerHand.style.opacity = 1;
+            blushOn(herBlush);
+            gesture(herArmNear, "rotate(55deg)", 1400, "rotate(0deg)");
+            gesture(himArmNear, "rotate(-70deg)", 1400, "rotate(0deg)");
+            gsap.to("#herWrap", {duration:0.7, x:"-=50", ease:"power1.inOut"});
+            setTimeout(function(){
+              narrate("Sus manos se rozan al entregarte el ramo, y ninguno de los dos tiene prisa por soltarlas. Las flores quedan entre tu pecho y el suyo.", function(){ sceneWalk(); });
+            }, 700);
+          }
+        },
+        {
+          label: "Tomar el ramo.",
+          onPick: function(){
+            state.accepted = true;
+            himFlowerHand.style.opacity = 0;
+            herFlowerHand.style.opacity = 1;
+            blushOn(herBlush);
+            gesture(herArmNear, "rotate(-18deg)", 600, "rotate(0deg)").then(function(){
+              narrate("Lo sostienes cerca del pecho, como quien guarda algo que volverá a oler a tarde.", function(){ sceneWalk(); });
+            });
+          }
+        },
+        {
+          label: "Negar el ramo.",
+          onPick: function(){
+            state.accepted = false;
+            shakeHeadNo(herHead).then(function(){
+              blushOn(himBlush);
+              narrate("— Está bien, lo siento... — dice, y se guarda el ramo junto a la culpa.", function(){ sceneNote(); });
+            });
+          }
+        }
+      ]);
+    });
+  }
+
+  /* ---------- escena 4: el paseo ---------- */
+  function sceneWalk(){
+    narrate("El viento los lleva hasta el campo donde se tomaron fotos tirados en el suelo, de espaldas, sin saber que esa tarde se guardaría. Luego él te ofrece su mano para caminar juntos.", function(){
+      presentChoices("Él te ofrece su mano para caminar juntos.", [
+        {
+          label: "Tomar de la mano.",
+          onPick: function(){
+            state.walk = "hand";
+            state.heldHands = true;
+            narrate("Su mano es caliente y no te suelta. La aprietas apenas, y él suelta lo que venía guardando desde Huánuco:", function(){ confession(); });
+          }
+        },
+        {
+          label: "Negar gentilmente.",
+          onPick: function(){
+            state.walk = "decline";
+            narrate("Caminan juntos, cada uno con su lugar y la distancia que piensas correcta, hasta que él se detiene en medio del campo:", function(){ confession(); });
+          }
+        },
+        {
+          label: "Darle una cachetada.",
+          onPick: function(){
+            state.walk = "slap";
+            sceneSlap();
+          }
+        }
+      ]);
+    });
+  }
+
+  /* ---------- escena 5: la cachetada ---------- */
+  function sceneSlap(){
+    narrate("Le diste una cachetada. De las de antes, de las que eran una broma. Pero esta vez nadie se rió.\n— Auch. Eso dolió. ¿Por qué lo hiciste?", function(){
+      presentChoices("¿Cómo le respondes?", [
+        {
+          label: "«Te lo merecías.»",
+          onPick: function(){
+            state.slapAnswer = "merecias";
+            narrate("— ¡Ja! ¡No me dolió! — dice con el orgullo herido en la voz.", function(){ confession(); });
+          }
+        },
+        {
+          label: "«¿Por qué no?»",
+          onPick: function(){
+            state.slapAnswer = "zno";
+            narrate("— Sí, lo sé... quizá solo merezca eso — dice, y baja la mirada.", function(){ confession(); });
+          }
+        },
+        {
+          label: "«Lo siento... Puerco.»",
+          onPick: function(){
+            state.slapAnswer = "sorry";
+            narrate("— Sí me dolió. Pero yo habría hecho lo mismo si estuviera en tu lugar.", function(){ confession(); });
+          }
+        }
+      ]);
+    });
+  }
+
+  /* ---------- escena 6: confesión y reconciliación ---------- */
+  function confession(){
+    narrate("Se queda en silencio, ahí parado entre las flores, mirándose los pies.\n— Estoy triste, ratona. Estoy triste desde que te fuiste. Peleamos demasiado, lo sé. Hoy solo quería... quisiera haber sido mejor. Perdón por todo. Perdón por llegar tan tarde a esta tarde.", function(){
+      presentChoices("Frente a su confesión, ¿qué haces?", [
+        {
+          label: "Abrazarlo.",
+          onPick: function(){
+            state.forgiveness = true;
+            blushOn(himBlush);
+            gesture(herArmNear, "rotate(55deg)", 1400, "rotate(0deg)");
+            gesture(himArmNear, "rotate(-70deg)", 1400, "rotate(0deg)");
+            gsap.to("#herWrap", {duration:0.7, x:"-=46", ease:"power1.inOut"});
+            setTimeout(function(){
+              narrate("Lo abrazas y ambos se quedan en silencio, porque no se necesitan palabras en este momento.", function(){ sceneNote(); });
+            }, 650);
+          }
+        },
+        {
+          label: "Quedarte firme.",
+          onPick: function(){
+            state.forgiveness = false;
+            narrate("No te mueves y él lo entiende.\n— Está bien, no tienes que perdonarme hoy. Solo quería que lo supieras.", function(){ sceneNote(); });
+          }
+        }
+      ]);
+    });
+  }
+
+  /* ---------- escena 7: la nota ---------- */
+  function sceneNote(){
+    gsap.to("#duskSky", {opacity:0.35, duration:3.2, ease:"power1.in"});
+    gsap.to("#sunGroup", {y:70, duration:4, ease:"power1.in"});
+    gsap.to("#sunRays", {opacity:0, duration:2.2, ease:"power1.in"});
+    narrate("La tarde empieza a oscurecer sobre el campo. Él saca del bolsillo un papel doblado y te lo entrega junto a un lápiz.\n— No todo se dice con flores. Escribe lo que sientas. Yo no lo abro ahora si no quieres.", function(){
+      dialogueText.style.display = "none";
+      tapHint.style.display = "none";
+      dialoguePanel.classList.add("no-tap");
+      advanceHandler = null;
+      noteArea.style.display = "block";
+      showDialogue();
+      noteInput.focus();
+    });
+  }
+
+  noteReadBtn.addEventListener("click", function(e){
+    e.stopPropagation();
+    state.readNote = "leer";
+    noteArea.style.display = "none";
+    dialogueText.style.display = "";
+    narrate("— Mejor para luego, ratona — dice, y guarda el papel sin abrirlo.", goEnding);
+  });
+  noteKeepBtn.addEventListener("click", function(e){
+    e.stopPropagation();
+    state.readNote = "guardar";
+    noteArea.style.display = "none";
+    dialogueText.style.display = "";
+    narrate("Guardas el papel doblado en el bolsillo y él sonríe, sin preguntar.", goEnding);
+  });
+
+  /* ---------- finales: 5 matices ---------- */
+  function computeEnding(){
+    if(!state.accepted) return "herido";
+    var hurt = 0, spark = 0, warm = 0, calm = 0;
+    if(state.greet === 1){ spark += 2; warm += 1; }
+    else if(state.greet === 2){ calm += 2; }
+    else { spark += 1; }
+    if(state.memory === 1){ warm += 1; calm += 1; } else { hurt += 1; }
+    if(state.hugged) warm += 2;
+    if(state.walk === "hand"){ warm += 1; spark += 1; }
+    else if(state.walk === "decline"){ calm += 2; }
+    if(state.slapAnswer === "merecias"){ spark += 2; hurt += 1; }
+    else if(state.slapAnswer === "zno"){ spark += 2; warm += 1; }
+    else if(state.slapAnswer === "sorry"){ warm += 2; calm += 1; }
+    if(state.forgiveness){ warm += 2; calm += 1; } else { hurt += 1; }
+    if(hurt >= 2) return "sinResuelto";
+    if(spark >= warm && spark > calm) return "chispeante";
+    if(warm > spark && warm > calm) return "enamorado";
+    return "enPaz";
+  }
+
+  function sunFlare(cb){
+    gsap.to("#duskSky", {opacity:0.5, duration:3.4, ease:"power1.in"});
+    gsap.to("#starsGroup .star", {opacity:0.9, duration:3, ease:"sine.out"});
+    gsap.to("#sunGroup", {y:86, duration:4.2, ease:"power1.in"});
+    gsap.to("#sunRays", {opacity:0, duration:2, ease:"power1.in"});
+    gsap.to("#birds", {opacity:0.85, duration:1.2, delay:0.5});
+    spawnFireflies();
+    goldOverlay.style.opacity = 1;
+    setTimeout(cb, 1600);
+  }
+
+  function goEnding(){
+    var key = computeEnding();
+    if(key === "enamorado"){
+      narrate("Se acerca despacio y el campo se vuelve más chico alrededor de ustedes. Por un segundo, sus ojos bajan hacia tus labios.", function(){
+        narrate("Estás por cerrar los ojos cuando un tintineo rompe la tarde desde tu bolsillo.", function(){
+          narrate("Despiertas, tu alarma suena...", function(){
+            showDedication("enamorado");
+          });
+        });
+      });
+    } else {
+      sunFlare(function(){ showDedication(key); });
+    }
+  }
+
+  /* ---------- dedicatoria según el final ---------- */
+  function showDedication(key){
+    var body;
+    if(key === "enamorado"){
+      body = "Despiertas, tu alarma suena... No es arte pequeño el dormir; para llevarlo a dominarlo hay que pasarse todo el día despierto.\n\nBeso soy, sombra con sombra.\nBeso, dolor con dolor.\nPor haberme enamorado,\ncorazón sin corazón.";
+    } else if(key === "chispeante"){
+      body = "A lo lejos tú, más sola que la muerte, la una y yo.\nA lo lejos tú, sintiendo en tus brazos mi prisión,\nen tus brazos donde late la libertad de los dos.";
+    } else if(key === "enPaz"){
+      body = "Sed con agua en la distancia\npero sed alrededor.\nPor el campo voy dejando\nalgo que voy recogiendo,\ny como un sendero me iré\ny no acabaré de irme.";
+    } else if(key === "sinResuelto"){
+      body = "¿Para qué quiero la luz\nsi tropiezo con las tinieblas?\nSigue este cuchillo volando, hiriendo:\nalgún día se pondrá el tiempo amarillo\nsobre mi fotografía.";
+    } else {
+      body = "Aquí estoy para vivir mientras el alma me suene\ny aquí estoy para morir cuando la hora me llegue.\nCantando espero a la muerte,\nque hay ruiseñores que cantan\nencima de los fusiles y en medio de las batallas.";
+    }
+    document.getElementById("endBody").textContent = body;
+    document.getElementById("endSignature").textContent = "Con todo mi cariño.";
+    document.getElementById("endTitle").textContent = "Para ti";
+    endOverlay.classList.remove("hidden");
+    setTimeout(function(){
+      var rp = document.getElementById("replayBtn");
+      if(rp){ try{ rp.focus(); }catch(e){} }
+    }, 400);
+  }
+
+  /* ---------- reset ---------- */
+  function reset(){ window.location.reload(); }
+
+  document.getElementById("startBtn").addEventListener("click", begin);
+  document.getElementById("replayBtn").addEventListener("click", reset);
+  restartBtn.addEventListener("click", reset);
+
+})();
+</script>
+</body>
+</html>
